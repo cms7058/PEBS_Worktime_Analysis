@@ -72,7 +72,7 @@ export default function Stats({ process, setError }) {
 
   return (
     <>
-      <div className="card">
+      <div className="card" data-tour="stats-overview">
         <h2>{t('数据概览 —')} {process.name}</h2>
         {statusEntries.length === 0 ? <div className="empty">{t('该工序还没有分析数据')}</div> :
           statusEntries.map(([s, n]) => (
@@ -83,7 +83,9 @@ export default function Stats({ process, setError }) {
         <p className="hint">{t('统计只纳入 complete 循环；其余状态单独计数，确保无样本被静默丢弃。')}</p>
       </div>
 
-      <DescribeBlock title={t('循环工时分布')} d={stats.cycle_time} />
+      <div data-tour="cycle-dist">
+        <DescribeBlock title={t('循环工时分布')} d={stats.cycle_time} />
+      </div>
       <div className="row">
         {Object.entries(stats.step_time ?? {}).map(([step, d]) => (
           <div key={step} style={{ flex: 1, minWidth: 380 }}>
@@ -93,7 +95,7 @@ export default function Stats({ process, setError }) {
       </div>
 
       {eff && eff.steps?.some((s) => s.standard_seconds != null) && (
-        <div className="card">
+        <div className="card" data-tour="efficiency-table">
           <h2>{t('实测 vs 标准工时（PMTS）')}</h2>
           <table>
             <thead><tr><th>{t('工步')}</th><th>{t('实测中位')}</th><th>{t('标准工时')}</th>

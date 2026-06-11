@@ -149,7 +149,7 @@ export default function Workbench({ process, reload, setError }) {
                    onChange={(e) => setTSec(Number(e.target.value))} style={{ flex: 1 }} />
           </label>
         </div>
-        <div className="canvas-wrap">
+        <div className="canvas-wrap" data-tour="roi-canvas">
           <canvas ref={canvasRef} onMouseDown={onMouseDown} onMouseMove={onMouseMove}
                   onMouseUp={onMouseUp} onMouseLeave={() => { dragRef.current = null; draw() }} />
         </div>
@@ -194,7 +194,7 @@ export default function Workbench({ process, reload, setError }) {
               ))}
             </div>
 
-            <h2 style={{ marginTop: 18 }}>{t('工步序列')}
+            <h2 style={{ marginTop: 18 }} data-tour="step-editor">{t('工步序列')}
               <span className="hint">　{t('按顺序执行，全部完成记为一个循环')}</span>
             </h2>
             {(cfg?.steps ?? []).map((step, i) => (
@@ -213,7 +213,7 @@ export default function Workbench({ process, reload, setError }) {
         )}
 
         <div>
-          <button className="primary" disabled={saving || !dirty} onClick={save}>
+          <button className="primary" data-tour="save-config" disabled={saving || !dirty} onClick={save}>
             {saving ? t('保存中…') : t('保存配置')}
           </button>{' '}
           <button className="ghost" onClick={() => setShowYaml(!showYaml)}>

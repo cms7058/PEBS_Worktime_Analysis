@@ -126,6 +126,8 @@ main {
   cursor: pointer; border-radius: 6px; white-space: nowrap;
 }
 .dropdown button:hover { background: #f3f4f6; }
+.dropdown-group { padding: 7px 12px 3px; font-size: 12px; color: #6b7280; }
+.dropdown-sep { border-top: 1px solid #f0f1f3; margin: 4px 0; }
 
 .role-badge {
   display: inline-block; background: #2563eb; color: #fff;
@@ -150,6 +152,25 @@ main {
   background: #dcfce7; color: #15803d; border-radius: 8px;
   padding: 8px 14px; margin-bottom: 12px; font-size: 13px; cursor: pointer;
 }
+
+/* 交互式教程引导 */
+.tour-layer { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+.tour-highlight {
+  position: fixed; border: 2px solid #2563eb; border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
+  transition: all .25s ease; pointer-events: none;
+}
+.tour-bubble {
+  position: fixed; width: 340px; background: #fff; border-radius: 10px;
+  padding: 14px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  pointer-events: auto; font-size: 13px;
+}
+.tour-bubble-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 6px; font-size: 14px;
+}
+.tour-bubble p { margin: 0 0 12px; line-height: 1.6; color: #374151; }
+.tour-bubble-actions { display: flex; gap: 8px; align-items: center; }
 
 .assistant-fab {
   position: fixed; right: 18px; bottom: 18px; width: 48px; height: 48px;

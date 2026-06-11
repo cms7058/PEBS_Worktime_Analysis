@@ -63,12 +63,12 @@ export default function ProcessLibrary({ processes, reload, onSelect, setError }
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ margin: 0 }}>{t('工序库')}</h2>
-          <button className="primary" onClick={() => setShowForm(!showForm)}>
+          <button className="primary" data-tour="new-process" onClick={() => setShowForm(!showForm)}>
             {showForm ? t('收起') : t('+ 新建工序')}
           </button>
         </div>
         {showForm && (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 14 }} data-tour="new-process-form">
             <div className="row">
               <label className="field" style={{ flex: 1 }}>
                 <span>{t('名称')}</span>

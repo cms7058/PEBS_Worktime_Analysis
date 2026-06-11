@@ -26,7 +26,7 @@ const QUICK_PROMPTS = {
 // 调用了这些工具说明数据被改写，需要刷新页面数据
 const WRITE_TOOLS = new Set(['create_process', 'update_process_config', 'analyze_video'])
 
-export default function AssistantPanel({ tab, tabLabel, process, width = 360, onDataChanged, setError }) {
+export default function AssistantPanel({ tab, tabLabel, process, width = 360, onDataChanged, onStartTour, setError }) {
   const { t, lang } = useI18n()
   const [open, setOpen] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
@@ -61,9 +61,12 @@ export default function AssistantPanel({ tab, tabLabel, process, width = 360, on
       const r = await api.chat(nextMessages, context)
       setApiMessages(r.messages)
       setHistory((h) => [...h, { role: 'assistant', text: r.reply, tools: r.tool_calls }])
-      if (r.tool_calls?.some((t) => WRITE_TOOLS.has(t.tool) && !t.is_error)) {
+      if (r.tool_calls?.some((tc) => WRITE_TOOLS.has(tc.tool) && !tc.is_error)) {
         onDataChanged?.()   // 助手改了数据，刷新当前页面
       }
+      // 助手调用了教程工具 → 自动播放交互式引导
+      const tut = r.tool_calls?.find((tc) => tc.tool === 'show_tutorial' && !tc.is_error)
+      if (tut?.input?.tutorial_id) onStartTour?.(tut.input.tutorial_id)
     } catch (e) {
       setHistory((h) => [...h, { role: 'assistant', text: `${t('（出错了：')}${e.message}）` }])
     } finally { setChatting(false) }
@@ -99,7 +102,7 @@ export default function AssistantPanel({ tab, tabLabel, process, width = 360, on
         <span className="hint" style={{ flex: 1, marginLeft: 8 }}>
           {active ? active.name : t('未配置模型')}
         </span>
-        <button className="ghost" style={{ padding: '2px 8px' }}
+        <button className="ghost" style={{ padding: '2px 8px' }} data-tour="assistant-settings"
                 onClick={() => setShowSettings(!showSettings)}>⚙</button>
         <button className="ghost" style={{ padding: '2px 8px' }}
                 onClick={() => setOpen(false)}>✕</button>

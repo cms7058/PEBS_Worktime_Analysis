@@ -447,6 +447,24 @@ def process_efficiency(process_id: int, batch_id: Optional[int] = None,
         raise HTTPException(422, str(e))
 
 
+# -- 教程 -----------------------------------------------------------------------
+
+from . import tutorials as tutorials_mod  # noqa: E402
+
+
+@app.get("/tutorials")
+def tutorials_list(lang: str = "zh"):
+    return tutorials_mod.list_tutorials(lang if lang in ("zh", "en") else "zh")
+
+
+@app.get("/tutorials/{tutorial_id}")
+def tutorial_get(tutorial_id: str, lang: str = "zh"):
+    tu = tutorials_mod.get_tutorial(tutorial_id, lang if lang in ("zh", "en") else "zh")
+    if tu is None:
+        raise HTTPException(404, f"tutorial {tutorial_id!r} not found")
+    return tu
+
+
 # -- 智能体：模型配置与对话 ------------------------------------------------------------
 
 from . import llm  # noqa: E402

@@ -227,6 +227,17 @@ const DICT = {
   '效率比偏低，可能的原因和改善方向？': 'Efficiency is low — likely causes and improvements?',
 }
 
+Object.assign(DICT, {
+  // 教程
+  '使用教程': 'Tutorials',
+  '结束教程': 'Exit',
+  '上一步': 'Back',
+  '下一步': 'Next',
+  '完成': 'Done',
+  '教程加载失败': 'Failed to load tutorial',
+  '教我怎么使用这个系统': 'Teach me how to use this system',
+})
+
 const I18nContext = createContext(null)
 
 export function I18nProvider({ children }) {

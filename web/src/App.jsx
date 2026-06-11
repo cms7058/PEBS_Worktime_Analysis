@@ -7,6 +7,7 @@ import Stats from './components/Stats.jsx'
 import AssistantPanel from './components/AssistantPanel.jsx'
 import Login from './components/Login.jsx'
 import UserAdmin from './components/UserAdmin.jsx'
+import Tour from './components/Tour.jsx'
 import { useI18n } from './i18n.jsx'
 
 const TABS = [
@@ -26,6 +27,18 @@ export default function App() {
   const [error, setError] = useState('')
   const [showUserAdmin, setShowUserAdmin] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [tour, setTour] = useState(null)            // 当前播放的教程
+  const [tutorialList, setTutorialList] = useState([])
+
+  useEffect(() => {
+    if (!user) return
+    api.listTutorials(lang).then(setTutorialList).catch(() => setTutorialList([]))
+  }, [user, lang])
+
+  const startTour = useCallback(async (id) => {
+    try { setTour(await api.getTutorial(id, lang)) }
+    catch (e) { setError(`${t('教程加载失败')}: ${e.message}`) }
+  }, [lang, t])
 
   // 点击页面其他区域关闭用户菜单
   useEffect(() => {
@@ -130,6 +143,14 @@ export default function App() {
           </button>
           {menuOpen && (
             <div className="dropdown">
+              <div className="dropdown-group">📖 {t('使用教程')}</div>
+              {tutorialList.map((tu) => (
+                <button key={tu.id} style={{ paddingLeft: 24 }}
+                        onClick={() => { setMenuOpen(false); startTour(tu.id) }}>
+                  {tu.title}
+                </button>
+              ))}
+              <div className="dropdown-sep" />
               <button onClick={() => { toggle(); setMenuOpen(false) }}>
                 🌐 {lang === 'en' ? '切换为中文' : 'Switch to English'}
               </button>
@@ -157,10 +178,13 @@ export default function App() {
         <div className="resizer" onMouseDown={startDrag} title={t('拖动调整助手面板宽度')} />
         <AssistantPanel tab={tab} tabLabel={tabLabel} process={selected}
                         width={assistantWidth}
-                        onDataChanged={reload} setError={setError} />
+                        onDataChanged={reload} onStartTour={startTour} setError={setError} />
       </div>
       {showUserAdmin && (
         <UserAdmin currentUser={user} onClose={() => setShowUserAdmin(false)} setError={setError} />
+      )}
+      {tour && (
+        <Tour tutorial={tour} onTabChange={setTab} onClose={() => setTour(null)} />
       )}
     </>
   )

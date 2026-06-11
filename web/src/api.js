@@ -76,6 +76,10 @@ export const api = {
   pmtsCalc: (sequence, method = 'modapts', allowance = 0) =>
     request('/pmts/calc', json('POST', { sequence, method, allowance })),
 
+  // 教程
+  listTutorials: (lang) => request(`/tutorials?lang=${lang}`),
+  getTutorial: (id, lang) => request(`/tutorials/${id}?lang=${lang}`),
+
   // 智能体
   llmConfigs: () => request('/llm/configs'),
   saveLlmConfig: (body) => request('/llm/configs', json('POST', body)),

@@ -56,7 +56,7 @@ export default function Batches({ process, setError }) {
     <>
       <div className="card">
         <h2>{t('上传采集批次 —')} {process.name}</h2>
-        <div className="row" style={{ alignItems: 'flex-end' }}>
+        <div className="row" style={{ alignItems: 'flex-end' }} data-tour="upload-form">
           <label className="field" style={{ flex: 2 }}>
             <span>{t('视频文件')}</span>
             <input type="file" ref={fileRef} accept="video/*" />
@@ -66,7 +66,7 @@ export default function Batches({ process, setError }) {
             <input type="text" value={form.label}
                    onChange={(e) => setForm({ ...form, label: e.target.value })} />
           </label>
-          <label className="field" style={{ width: 190 }}>
+          <label className="field" style={{ width: 190 }} data-tour="backend-select">
             <span>{t('感知后端')}</span>
             <select value={form.backend} onChange={(e) => setForm({ ...form, backend: e.target.value })}>
               <option value="pose">{t('pose（可见上半身）')}</option>
@@ -78,7 +78,7 @@ export default function Batches({ process, setError }) {
             <input type="number" value={form.sample_fps} min="1" max="30"
                    onChange={(e) => setForm({ ...form, sample_fps: Number(e.target.value) })} />
           </label>
-          <label className="field" style={{ width: 180 }}>
+          <label className="field" style={{ width: 180 }} data-tour="autostart-select">
             <span>{t('上传后')}</span>
             <select value={form.autostart}
                     onChange={(e) => setForm({ ...form, autostart: e.target.value === 'true' })}>
@@ -93,7 +93,7 @@ export default function Batches({ process, setError }) {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card" data-tour="batch-list">
         <h2>{t('批次列表')}</h2>
         {batches.length === 0 ? <div className="empty">{t('暂无批次')}</div> : (
           <table>

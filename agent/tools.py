@@ -16,7 +16,7 @@ from pipeline.perception import analyze_video as run_perception
 from pipeline.rules import ProcessConfig, RuleEngine, summarize
 from pmts import registry as pmts_registry
 from pmts.base import calc_standard_time as pmts_calc
-from server import db, efficiency, stats
+from server import db, efficiency, stats, tutorials
 from server.analysis import validate_config_yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -201,6 +201,19 @@ def preview_roi(video_path: str, t: float = 3.0,
             "rois_drawn": rois_drawn, "keypoints_detected": detected}
 
 
+def list_tutorials(lang: str = "zh") -> list[dict]:
+    return tutorials.list_tutorials(lang)
+
+
+def show_tutorial(tutorial_id: str, lang: str = "zh") -> dict:
+    """返回教程内容；前端检测到本工具调用成功后会自动播放交互式引导
+    （在页面上高亮对应按钮/区域并分步说明）."""
+    tu = tutorials.get_tutorial(tutorial_id, lang)
+    if tu is None:
+        raise ValueError(f"教程不存在: {tutorial_id}，可用教程见 list_tutorials")
+    return tu
+
+
 # -- tool registry --------------------------------------------------------------
 
 TOOL_FUNCTIONS: dict[str, Callable[..., Any]] = {
@@ -208,6 +221,7 @@ TOOL_FUNCTIONS: dict[str, Callable[..., Any]] = {
         list_processes, get_process_config, create_process,
         update_process_config, analyze_video, get_cycles, query_statistics,
         compare_efficiency, list_pmts_methods, calc_standard_time, preview_roi,
+        list_tutorials, show_tutorial,
     ]
 }
 
@@ -352,6 +366,35 @@ TOOL_DEFINITIONS: list[dict] = [
         },
     },
 ]
+
+
+TOOL_DEFINITIONS.extend([
+    {
+        "name": "list_tutorials",
+        "description": "列出可用的交互式操作教程（创建工序、配置工作台、上传分析、解读统计、配置模型）。",
+        "input_schema": {
+            "type": "object",
+            "properties": {"lang": {"type": "string", "enum": ["zh", "en"]}},
+        },
+    },
+    {
+        "name": "show_tutorial",
+        "description": ("播放交互式操作教程：调用后前端会在真实页面上分步高亮对应"
+                        "按钮/区域并显示说明。用户问「怎么操作/怎么用/教我」类问题时"
+                        "优先调用本工具，并在回复里简述要点。lang 跟随用户界面语言。"),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tutorial_id": {"type": "string",
+                                "enum": ["create_process", "configure_workbench",
+                                         "upload_batch", "read_statistics",
+                                         "setup_model"]},
+                "lang": {"type": "string", "enum": ["zh", "en"]},
+            },
+            "required": ["tutorial_id"],
+        },
+    },
+])
 
 
 def execute_tool(name: str, tool_input: dict) -> tuple[str, bool]:
