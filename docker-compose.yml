@@ -5,7 +5,8 @@ services:
     container_name: pebs
     restart: unless-stopped
     ports:
-      - "80:8000"          # 对外端口按需修改；生产建议前置 nginx 做 HTTPS
+      # 服务器已有其他项目时避免端口冲突：用 PEBS_PORT 指定空闲端口，默认 8080
+      - "${PEBS_PORT:-8080}:8000"
     volumes:
       - ./data:/app/data   # 数据库 + 上传视频持久化，升级镜像不丢数据
     environment:

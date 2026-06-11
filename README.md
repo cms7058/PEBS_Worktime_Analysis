@@ -118,8 +118,33 @@ docker compose logs -f
 git pull && docker compose up -d --build   # 数据在 ./data 卷中，升级不丢
 ```
 
+### 与服务器上已有项目共存
+
+```bash
+# 先看已占用的端口，挑一个空闲的
+docker ps --format 'table {{.Names}}\t{{.Ports}}'
+sudo ss -tlnp | grep -E ':(80|443|8080|8000)\b'
+
+# 用空闲端口启动（默认 8080；如被占用换一个，例如 9000）
+PEBS_PORT=9000 PEBS_ADMIN_PASSWORD=你的密码 docker compose up -d --build
+```
+
+已有 nginx 统一入口的话，加一个 server 块按域名反代即可（各项目互不影响）：
+
+```nginx
+server {
+    listen 80;
+    server_name pebs.你的域名.com;
+    client_max_body_size 500m;          # 允许上传大视频
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_read_timeout 300s;        # 视频分析接口耗时较长
+    }
+}
+```
+
 部署要点：
-- **安全组**：腾讯云控制台放行 80 端口（或你在 compose 里改的端口）
+- **安全组**：腾讯云控制台放行所选端口（默认 8080）；走 nginx 域名入口则只需放行 80/443
 - **数据持久化**：`./data` 挂载进容器，包含 SQLite 数据库与上传视频，注意定期备份
 - **初始密码**：环境变量 `PEBS_ADMIN_PASSWORD` 仅首次建库生效；不设则为 admin123，登录后务必修改
 - **HTTPS**：生产环境建议前置 nginx + 证书（腾讯云免费 SSL），将 443 反代到容器 8000
