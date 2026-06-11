@@ -66,8 +66,12 @@ def _user_row(row) -> Optional[dict]:
 def init(conn) -> None:
     conn.executescript(SCHEMA)
     if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
-        create_user(conn, "admin", "admin123", role="admin")
-        print("[PEBS] 已创建默认管理员账号：admin / admin123，登录后请立即修改密码")
+        # 容器部署可用 PEBS_ADMIN_PASSWORD 指定初始密码（docker-compose.yml）
+        password = os.environ.get("PEBS_ADMIN_PASSWORD") or "admin123"
+        create_user(conn, "admin", password, role="admin")
+        print(f"[PEBS] 已创建默认管理员账号：admin / "
+              f"{'<PEBS_ADMIN_PASSWORD>' if os.environ.get('PEBS_ADMIN_PASSWORD') else 'admin123'}"
+              "，登录后请立即修改密码")
 
 
 def create_user(conn, username: str, password: str, role: str = "user") -> dict:

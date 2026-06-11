@@ -1,0 +1,13 @@
+services:
+  pebs:
+    build: .
+    image: pebs-worktime:latest
+    container_name: pebs
+    restart: unless-stopped
+    ports:
+      - "80:8000"          # 对外端口按需修改；生产建议前置 nginx 做 HTTPS
+    volumes:
+      - ./data:/app/data   # 数据库 + 上传视频持久化，升级镜像不丢数据
+    environment:
+      # 首次启动的管理员初始密码（仅在数据库无用户时生效），部署后请立即修改
+      - PEBS_ADMIN_PASSWORD=${PEBS_ADMIN_PASSWORD:-admin123}

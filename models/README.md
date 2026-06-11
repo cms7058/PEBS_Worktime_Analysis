@@ -1,1 +1,2 @@
-模型文件不入库，下载方式见根目录 README「快速开始」。
+MediaPipe 模型文件（pose_landmarker_lite.task / hand_landmarker.task）已随仓库提供，
+境内服务器构建镜像时无需访问 Google 下载源。

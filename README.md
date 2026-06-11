@@ -93,6 +93,38 @@ curl -X POST localhost:8000/processes/1/clone -d '{"name": "取石入杯-线2"}'
 - [x] 阶段 6：前端（React + Vite：工序库、ROI 画布工作台、批次分析、统计看板）
 - [x] 阶段 7：智能体层（Claude tool use，11 个工具覆盖全流程）
 
+## Docker 部署（腾讯云等境内服务器）
+
+镜像源已适配境内网络：前端依赖走 npmmirror，Python 依赖走腾讯云 PyPI 镜像，
+MediaPipe 模型文件已随仓库提供（无需访问 Google）。
+
+```bash
+# 1. 服务器装 Docker（腾讯云 OrcaTerm/SSH 登录后）
+curl -fsSL https://get.docker.com | sh -s -- --mirror Aliyun
+sudo systemctl enable --now docker
+
+# 2. （可选但推荐）配置 Docker Hub 境内加速，否则拉基础镜像可能很慢
+sudo tee /etc/docker/daemon.json <<'EOF'
+{"registry-mirrors": ["https://mirror.ccs.tencentyun.com"]}
+EOF
+sudo systemctl restart docker
+
+# 3. 拉代码并启动（首次构建约 5-10 分钟）
+git clone https://github.com/cms7058/PEBS_Worktime_Analysis.git && cd PEBS_Worktime_Analysis
+PEBS_ADMIN_PASSWORD=你的初始密码 docker compose up -d --build
+
+# 4. 看日志 / 升级
+docker compose logs -f
+git pull && docker compose up -d --build   # 数据在 ./data 卷中，升级不丢
+```
+
+部署要点：
+- **安全组**：腾讯云控制台放行 80 端口（或你在 compose 里改的端口）
+- **数据持久化**：`./data` 挂载进容器，包含 SQLite 数据库与上传视频，注意定期备份
+- **初始密码**：环境变量 `PEBS_ADMIN_PASSWORD` 仅首次建库生效；不设则为 admin123，登录后务必修改
+- **HTTPS**：生产环境建议前置 nginx + 证书（腾讯云免费 SSL），将 443 反代到容器 8000
+- **性能**：视频分析吃 CPU，2 核 4G 起步；分析为后台任务逐个执行，不会拖垮 Web 服务
+
 ## 智能体使用
 
 **嵌入式助手**：智能体以右侧常驻面板嵌入每个功能页（可收起为悬浮球），

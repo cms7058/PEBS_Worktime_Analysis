@@ -10,7 +10,7 @@ web/dist/
 
 # 运行时数据（数据库含用户密码哈希与 API key，绝不入库）
 data/
-models/*.task
+# MediaPipe 模型（共 13MB）已入库：境内服务器构建时无法访问 Google 下载源
 
 # 系统
 .DS_Store
