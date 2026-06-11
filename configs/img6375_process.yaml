@@ -1,0 +1,29 @@
+# IMG_6375.MOV：从石堆取石块放入杯中（近景手部视角，用 hands 后端）
+# 食指尖比手腕更贴近实际操作点，近景场景优先用 *_index_tip
+process: rock_to_cup
+keypoints: [left_index_tip, right_index_tip]
+
+rois:
+  - name: rock_pile     # 石堆（取料区）
+    rect: [0.10, 0.53, 0.42, 0.78]
+  - name: cup           # 杯子（放置区）
+    rect: [0.64, 0.51, 0.97, 0.72]
+
+steps:
+  - name: pick          # 取石：手指进入石堆区再离开
+    start: {event: roi_enter, roi: rock_pile, keypoint: any}
+    end:   {event: roi_exit,  roi: rock_pile, keypoint: same}
+    max_duration: 5.0
+    standard:           # MODAPTS：大臂伸入 + 混堆中复杂抓取 = M4+G3 = 7 MOD
+      method: modapts
+      sequence: [M4, G3]
+  - name: place         # 投放：同一只手进入杯区再离开
+    start: {event: roi_enter, roi: cup, keypoint: same}
+    end:   {event: roi_exit,  roi: cup, keypoint: same}
+    max_duration: 5.0
+    standard:           # MODAPTS：大臂移动 + 简单放下（杯口无需对准）= M4+P0
+      method: modapts
+      sequence: [M4, P0]
+
+cycle:
+  max_duration: 20.0

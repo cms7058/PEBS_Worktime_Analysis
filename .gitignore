@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+web/node_modules/
+web/dist/
+
+# 运行时数据（数据库含用户密码哈希与 API key，绝不入库）
+data/
+models/*.task
+
+# 系统
+.DS_Store
+.claude/

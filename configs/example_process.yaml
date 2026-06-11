@@ -1,0 +1,23 @@
+# 示例工序配置：从料盒取料 -> 放入治具
+# rect 为归一化坐标 [x1, y1, x2, y2]，相对于画面宽高，与分辨率无关。
+process: demo_assembly
+keypoints: [left_wrist, right_wrist]
+
+rois:
+  - name: parts_bin     # 料盒区
+    rect: [0.05, 0.35, 0.30, 0.75]
+  - name: fixture       # 治具区
+    rect: [0.45, 0.40, 0.75, 0.85]
+
+steps:
+  - name: pick          # 取料：手进入料盒再离开
+    start: {event: roi_enter, roi: parts_bin, keypoint: any}
+    end:   {event: roi_exit,  roi: parts_bin, keypoint: same}
+    max_duration: 5.0
+  - name: place         # 放置：同一只手进入治具区再离开
+    start: {event: roi_enter, roi: fixture, keypoint: any}
+    end:   {event: roi_exit,  roi: fixture, keypoint: same}
+    max_duration: 8.0
+
+cycle:
+  max_duration: 30.0
