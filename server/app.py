@@ -535,6 +535,165 @@ def chat(body: ChatIn, conn=Depends(get_db)):
         raise HTTPException(502, f"模型调用失败 {type(e).__name__}: {str(e)[:300]}")
 
 
+# -- 阿米巴对接（平台令牌 + 按产品建项目 + 工时回填） ---------------------------------
+
+from . import amiba  # noqa: E402
+
+
+@app.on_event("startup")
+def _bootstrap_amiba():
+    conn = db.connect()
+    try: amiba.init(conn)
+    finally: conn.close()
+
+
+class AmibaRegisterIn(BaseModel):
+    amiba_endpoint: str
+    amiba_token: str            # 连接器令牌 amk_（数据回填通道）
+    enterprise_id: str
+    source: str = amiba.TOOL_ID
+
+
+@app.post("/amiba/register")
+def amiba_register(body: AmibaRegisterIn, conn=Depends(get_db)):
+    """阿米巴「接入此工具」后浏览器跳本工具 /register 带来的接入参数：存配置 + 回 hello。"""
+    if body.source != amiba.TOOL_ID:
+        raise HTTPException(422, f"该工具来源应为 {amiba.TOOL_ID}，收到 {body.source!r}")
+    cfg = amiba.save_config(conn, body.enterprise_id, body.amiba_endpoint, body.amiba_token, body.source)
+    amiba.hello(cfg)
+    return {"ok": True, "enterprise_id": body.enterprise_id}
+
+
+class AmibaPlatformLoginIn(BaseModel):
+    amiba_endpoint: str
+    platform_token: str
+    username: str
+    tool: str = amiba.TOOL_ID
+    enterprise_id: str = ""
+
+
+@app.post("/amiba/platform-login")
+def amiba_platform_login(body: AmibaPlatformLoginIn, conn=Depends(get_db)):
+    """仅核验平台令牌 + 铸本工具会话（供 /register 自动登录、无产品时用）。"""
+    res = amiba.verify_platform_login(body.amiba_endpoint, body.username, body.platform_token, body.tool)
+    if not res.get("valid"):
+        raise HTTPException(401, res.get("reason") or "平台令牌核验失败")
+    user = amiba.ensure_user(conn, body.username)
+    token = amiba.mint_session(conn, user["id"])
+    return {"ok": True, "token": token,
+            "user": {"id": user["id"], "username": user["username"], "role": user["role"]},
+            "displayName": res.get("displayName") or body.username}
+
+
+class AmibaLaunchIn(BaseModel):
+    amiba_endpoint: str
+    platform_token: str         # 平台登录令牌 apk_（登录凭证）
+    username: str
+    tool: str = amiba.TOOL_ID
+    enterprise_id: str
+    enterprise_name: str = ""
+    product_id: str
+    part_no: str = ""
+    product_name: str = ""
+    connector_token: str = ""   # 同时带来的数据回填令牌 amk_
+    team: list = []
+
+
+@app.post("/amiba/launch")
+def amiba_launch(body: AmibaLaunchIn, conn=Depends(get_db)):
+    """阿米巴「重新接入/换令牌（带产品）」跳来：核验平台令牌→建会话→按产品建计时项目。"""
+    res = amiba.verify_platform_login(body.amiba_endpoint, body.username, body.platform_token, body.tool)
+    if not res.get("valid"):
+        raise HTTPException(401, res.get("reason") or "平台令牌核验失败")
+
+    # 接入配置：launch 自带连接器令牌，落库后回填即可用（无需先走 /register）
+    if body.connector_token:
+        amiba.save_config(conn, body.enterprise_id, body.amiba_endpoint, body.connector_token)
+
+    user = amiba.ensure_user(conn, body.username)
+    token = amiba.mint_session(conn, user["id"])
+    project = amiba.ensure_project(
+        conn, body.enterprise_id, body.enterprise_name, body.product_id, body.part_no,
+        body.product_name, body.amiba_endpoint, body.connector_token, body.username, body.team)
+    return {
+        "ok": True, "token": token,
+        "user": {"id": user["id"], "username": user["username"], "role": user["role"]},
+        "projectId": project["id"],
+        "productName": body.product_name, "partNo": body.part_no,
+        "enterpriseName": body.enterprise_name,
+    }
+
+
+@app.get("/amiba/projects/{project_id}")
+def amiba_get_project(project_id: str, conn=Depends(get_db)):
+    p = amiba.get_project(conn, project_id)
+    if not p:
+        raise HTTPException(404, "项目不存在")
+    return p
+
+
+@app.post("/amiba/projects/{project_id}/tasks/{task_id}/{action}")
+def amiba_task_action(project_id: str, task_id: str, action: str, conn=Depends(get_db)):
+    if action not in ("start", "stop", "done"):
+        raise HTTPException(400, "未知操作")
+    try:
+        p = amiba.task_action(conn, project_id, task_id, action)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    if not p:
+        raise HTTPException(404, "项目不存在")
+    return p
+
+
+@app.post("/amiba/projects/{project_id}/submit")
+def amiba_submit_project(project_id: str, conn=Depends(get_db)):
+    p = amiba.submit_project(conn, project_id)
+    if not p:
+        raise HTTPException(404, "项目不存在")
+    return p
+
+
+@app.post("/amiba/report/{process_id}")
+def amiba_report(process_id: int, conn=Depends(get_db)):
+    """（旧）把该工序实测工时 / 工时负荷率 / PMTS 标准对比回填到阿米巴对应产品。"""
+    _get_process_or_404(conn, process_id)
+    try:
+        return amiba.report(conn, process_id)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get("/amiba/binding/{process_id}")
+def amiba_binding(process_id: int, conn=Depends(get_db)):
+    """该工序是否绑定了阿米巴产品（前端据此显示回填按钮）。"""
+    return amiba.get_binding(conn, process_id) or {}
+
+
+# 阿米巴接入/平台登录的入口 URL（浏览器 GET 跳转）需回 SPA 首页，由前端按
+# pathname 分流到接入页 / 登录页。StaticFiles(html=True) 不会对任意子路径兜底，
+# 故在此显式把这两个入口指回 index.html（开发期前端在 5173，无 dist 时跳过）。
+from fastapi.responses import FileResponse  # noqa: E402
+
+_SPA_ENTRY_PATHS = ("/register", "/amiba/launch")
+
+
+def _spa_index() -> FileResponse:
+    index = Path(__file__).parent.parent / "web" / "dist" / "index.html"
+    if not index.exists():
+        raise HTTPException(404, "前端尚未构建（web/dist 缺失）；开发期请直接访问 5173 的对应路径")
+    return FileResponse(index)
+
+
+@app.get("/register")
+def spa_register():
+    return _spa_index()
+
+
+@app.get("/amiba/launch")
+def spa_amiba_launch():
+    return _spa_index()
+
+
 # -- 前端静态文件（生产模式：web/ 下 npm run build 后由本服务直接托管） ----------------
 
 _DIST = Path(__file__).parent.parent / "web" / "dist"

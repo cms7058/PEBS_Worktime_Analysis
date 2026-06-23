@@ -72,6 +72,7 @@ export default function Stats({ process, setError }) {
 
   return (
     <>
+
       <div className="card" data-tour="stats-overview">
         <h2>{t('数据概览 —')} {process.name}</h2>
         {statusEntries.length === 0 ? <div className="empty">{t('该工序还没有分析数据')}</div> :

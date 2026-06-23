@@ -80,6 +80,14 @@ export const api = {
   listTutorials: (lang) => request(`/tutorials?lang=${lang}`),
   getTutorial: (id, lang) => request(`/tutorials/${id}?lang=${lang}`),
 
+  // 阿米巴对接
+  amibaRegister: (body) => request('/amiba/register', json('POST', body)),
+  amibaPlatformLogin: (body) => request('/amiba/platform-login', json('POST', body)),
+  amibaLaunch: (body) => request('/amiba/launch', json('POST', body)),
+  amibaProject: (id) => request(`/amiba/projects/${id}`),
+  amibaProjectTask: (id, taskId, action) => request(`/amiba/projects/${id}/tasks/${taskId}/${action}`, { method: 'POST' }),
+  amibaProjectSubmit: (id) => request(`/amiba/projects/${id}/submit`, { method: 'POST' }),
+
   // 智能体
   llmConfigs: () => request('/llm/configs'),
   saveLlmConfig: (body) => request('/llm/configs', json('POST', body)),

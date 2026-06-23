@@ -8,6 +8,7 @@ import AssistantPanel from './components/AssistantPanel.jsx'
 import Login from './components/Login.jsx'
 import UserAdmin from './components/UserAdmin.jsx'
 import Tour from './components/Tour.jsx'
+import AmibaProjectBanner from './components/AmibaProjectBanner.jsx'
 import { useI18n } from './i18n.jsx'
 
 const TABS = [
@@ -90,7 +91,15 @@ export default function App() {
     try {
       const list = await api.listProcesses()
       setProcesses(list)
-      setSelectedId((cur) => (list.some((p) => p.id === cur) ? cur : list[0]?.id ?? null))
+      // 从阿米巴平台登录跳来时，自动选中该产品对应的工序并切到配置工作台
+      const focus = Number(localStorage.getItem('pebs_focus_process')) || null
+      if (focus && list.some((p) => p.id === focus)) {
+        localStorage.removeItem('pebs_focus_process')
+        setSelectedId(focus)
+        setTab('workbench')
+      } else {
+        setSelectedId((cur) => (list.some((p) => p.id === cur) ? cur : list[0]?.id ?? null))
+      }
     } catch (e) { setError(`${t('加载工序失败')}: ${e.message}`) }
   }, [user])
 
@@ -166,6 +175,7 @@ export default function App() {
           )}
         </div>
       </header>
+      <AmibaProjectBanner />
       <div className="layout">
         <main>
           {error && (
