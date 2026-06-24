@@ -577,7 +577,7 @@ def amiba_platform_login(body: AmibaPlatformLoginIn, conn=Depends(get_db)):
     """仅核验平台令牌 + 铸本工具会话（供 /register 自动登录、无产品时用）。"""
     res = amiba.verify_platform_login(body.amiba_endpoint, body.username, body.platform_token, body.tool)
     if not res.get("valid"):
-        raise HTTPException(401, res.get("reason") or "平台令牌核验失败")
+        raise HTTPException(400, res.get("reason") or "平台令牌核验失败")
     user = amiba.ensure_user(conn, body.username)
     token = amiba.mint_session(conn, user["id"])
     return {"ok": True, "token": token,
@@ -604,7 +604,7 @@ def amiba_launch(body: AmibaLaunchIn, conn=Depends(get_db)):
     """阿米巴「重新接入/换令牌（带产品）」跳来：核验平台令牌→建会话→按产品建计时项目。"""
     res = amiba.verify_platform_login(body.amiba_endpoint, body.username, body.platform_token, body.tool)
     if not res.get("valid"):
-        raise HTTPException(401, res.get("reason") or "平台令牌核验失败")
+        raise HTTPException(400, res.get("reason") or "平台令牌核验失败")
 
     # 接入配置：launch 自带连接器令牌，落库后回填即可用（无需先走 /register）
     if body.connector_token:
